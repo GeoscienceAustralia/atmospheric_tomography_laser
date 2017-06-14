@@ -8,27 +8,44 @@ The Atmospheric Tomography software is a command line tool written in python to 
 
 This manual walks a user through the steps needed to run the Atmospheric Tomography program. Please report any errors or omissions to the author.
 
-Plume Dispersion Model
-=================================
-A Lagrangian stochastic (LS) model [@thomson1987criteria] as implemented
-in WindTrax Version 2.0.8.8 [@windtrax] was used for forward modeling
-i.e. to predict the concentrations given other parameters. Bayesian
-inference requires the use of a model that is cheap in terms of
-computational cost, since it would be evaluated for a large number of
-points in the parameter space. Since WindTrax software is GUI driven and
-computationally expensive, it does not form a good choice for use in
-Bayesian inference. Therefore we fitted a function to the output of the
-Windtrax (which is two dimensional array of concentrations). For a
-number of different stability conditions as measured by Monin-Obukov
-length, plumes for a source of unit strength over a grid were generated.
-For each such plume, the parameters of the function were determined by
-fitting the function to WindTrax output. In this way we built a library
-of plume functions, which was an input to the Bayesian inference.
+Bayes’ theorem applied to quantification and localisation
+=========================================================
 
-Gaussian dispersion model {#subsec:gauss}
--------------------------
+Let ${\mathcal{P}}$ be a plume dispersion model. ${\mathcal{P}}(x, y, z, Q, \hdots)$ is the concentration of a pollutant at a point $(x,y,z)$ due to a source located at the origin and emitting at a rate of $Q$. The ellipsis denote the other parameters necessary to drive the dispersion model. The emission rate of the source, $Q$ is the parameter to be estimated. Let the measured concentration at $(x,y,z)$ be $C$. Then, from Bayes’ Theorem, we have
 
-Gaussian plume model [@sutton1932theory] is one of the most popular
+$$\label{equn:bayes_appl} P(Q \mid C) \propto P(C \mid Q)P(Q).$$
+
+Suppose we have $N$ samples of the concentration data
+$C_1, C_2, \hdots C_N$. Since each data point is independent, we have
+$$P(C_1, C_2, \hdots C_N \mid Q) = P(C_1 \mid Q)P(C_2 \mid Q) \hdots P(C_N \mid Q).$$
+
+Equation \[equn:bayes\_appl\] therefore becomes,
+$$\label{equn:bayes_appl_comp} P(Q \mid C_1, C_2, \hdots C_N) \propto \prod_{i=1}^{N} P(C_i \mid Q) P(Q)$$
+
+We assume that the observed concentrations are distributed according to
+a Laplacian distribution [@laplace] centered at the predicted
+concentration. That is, the probability of measuring concentration $C_i$
+is
+$$P(C_i) = \frac{1}{2 \tau_i} e^{-\left \vert C_i - P_i \right \vert/ \tau_i }.$$
+
+With the simplifying assumption that the spread in the errors is the
+same for all data points, we can rewrite equation  as, 
+$$\begin{aligned}
+P(Q \mid C_1, C_2, \hdots C_N) &\propto \prod_{i=1}^{N} \frac{1}{2 \tau} e^{-\left \vert C_i - P_i \right \vert/ \tau} P(Q) \\
+& = \frac{1}{(2 \tau)^N} e^{{-\sum_{i=1}^N{(\left \vert C_i - P_i \right \vert)/ \tau}}} P(Q).\end{aligned}$$
+
+The prior for the emission rate is set to a uniform probability
+distribution on a small interval (0 to 1). The prior on the spread $\tau$ of residuals is set to an uninformative prior that returns a log-likelihood of zero irrespective of the arguments passed to it. 
+
+Changing the priors on $Q$ and $\tau$
+-------------------------------------
+These can be changed in the file *tomography.py*. Changing this file requires a knowledge of python. Many useful priors are made available by PyMC. PyMC documentation also contains helpful information on writing your own priors.
+
+
+Gaussian dispersion model {#sec:gauss}
+=======================================
+
+The plume dispersion model implemented is the Gaussian plume model [@sutton1932theory], which is one of the most popular
 models used for atmospheric dispersion. The concentration $C(x,y,z)$ of
 a pollutant at $(x, y, z)$ is given by the equation .
 $$\label{equn:gauss_plume}
@@ -67,6 +84,53 @@ shows the relation between the two classification schemes. The parameters can be
 
   : Monin-Obukhov Length L with respect to atmospheric stability
   [@seinfeld2012atmospheric][]{data-label="table:stab_classes"}
+
+Other Plume Dispersion Models
+=============================
+
+Two other plume dispersion models are implemented. The first of these, which we call the semi-gaussian model presented in @humphries2012atmospheric] has the the functional form:
+$$\label{equn:semigaussian}
+  C(x,y) = Q  \frac{A}{x^E} exp \left( -\frac{B}{x^F} \right) exp\left(-Cy^2\frac{(D + x^G)^2}{x^H}\right).$$
+
+A simplified version is the following function 
+$$\label{equn:gauss_poly}
+  C(x,y) = Q (c_0 + c_1 x + c_2 x^2 + c_3 x^3)e^{-\frac{y^2}{A x^E}}.$$
+
+This is called the gaussian-polynomial hybrid function. 
+
+The parameters for these models for various values of the Monin-Obukov length (i.e., different stability classes) were derived by fitting the concentrations from a Lagrangian stochastic (LS) model [@thomson1987criteria] as implemented
+in WindTrax Version 2.0.8.8 [@windtrax]. 
+
+Modifying plume dispersion model parameters
+===========================================
+The models implemented in the software are called ‘gaussian’,
+‘semi-gaussian’ and ‘gauss\_poly’. The default model is the Gaussian model and its use is highly recommended.
+
+If you want to choose a different model, open the file *tomography.py* in a text editor and go to line 64.
+```
+reading_predicted[i] = util.line_average([source_x, source_y], 
+                                          p0_list[reflector], 
+                                          p1_list[reflector], 
+                                          z_list[reflector], 
+                                          samples, 1, h_source, 
+                                          theta, T, P, params, 
+                                          'gaussian')
+```
+
+Change the last parameter to one of the following values (in single quotes): semi-gaussian or gauss_poly. Do not copy the line above from this manual since python is space sensitive. Make sure that there are no spaces around the name and that the file is saved with the extension ".py".
+
+The parameter values for the models for each stability class are stored in the file called *params.py*. To edit these parameters, open this file in a text editor and navigate to the section that has the same name as the method. For instance, the Gaussian plume dispersion model makes use of $4$ parameters called $a, b, c$ and $d$.  The relevant section in *params.py*
+```
+gaussian = {
+'A': {'a':0.0383,'b':1.281,'c':0.495,'d':0.873},
+'B': {'a':0.1393,'b':0.9467,'c':0.310,'d':0.897},
+'D': {'a':0.0856,'b':0.8650,'c':0.122,'d':0.916},
+'E': {'a':0.1094,'b':0.7657,'c':0.0934,'d':0.912},
+'F': {'a':0.05645,'b':0.8050,'c':0.0625,'d':0.911}
+}
+```
+
+You can change these values and save the file. Make sure the file is saved with the extension ".py" as text editors usually add the extension ".txt" when a file is saved.   
 
 
 Installation
@@ -129,7 +193,7 @@ columns:
 
 6.  Reflector id (should be an integer) and
 
-7.  Perturbation in PPM
+7.  Perturbation in PPM - this is the background subtracted concentration
 
 The order of the columns cannot be changed. However the names of the columns do not impact the execution of the scripts. 
 
@@ -162,34 +226,6 @@ multiple data sets, hence they are stored in the file constants.py. This file is
 6. reflectors : The $(x, y)$ co-ordinates of the reflectors. 
 
 To change any of these values, open the file constants.py in a text editor such as notepad and edit the values. Make sure that the editor does not introduce any formatting in the file and that the file is saved with the extension ".py". 
-
-Modifying plume dispersion model parameters
-===========================================
-
-As mentioned in a previous (Section)[#subsec:gauss], the Gaussian plume dispersion model makes use of $4$ parameters called $a, b, c$ and $d$. The values for these parameters for each stability class are stored in the file called params.py. To change the parameters, open this file in a text editor. The relevant section is 
-```
-gaussian = {
-'A': {'a':0.0383,'b':1.281,'c':0.495,'d':0.873},
-'B': {'a':0.1393,'b':0.9467,'c':0.310,'d':0.897},
-'D': {'a':0.0856,'b':0.8650,'c':0.122,'d':0.916},
-'E': {'a':0.1094,'b':0.7657,'c':0.0934,'d':0.912},
-'F': {'a':0.05645,'b':0.8050,'c':0.0625,'d':0.911}
-}
-```
-
-You can edit these values and save the file. Make sure the file is saved with the extension ".py" as text editors usually add the extension ".txt" when a file is saved.   
-
-Choosing a plume dispersion model
-=================================
-
-The models implemented in the software are called ‘gaussian’,
-‘semi-gaussian’, ‘gauss\_poly’ and ‘gaussian2’.
-
-Choosing a method
-=================
-
-You can choose between line average (‘line\_average’) and line integral
-(‘line\_integral’).
 
 Atmospheric Tomography Scripts
 ==============================
