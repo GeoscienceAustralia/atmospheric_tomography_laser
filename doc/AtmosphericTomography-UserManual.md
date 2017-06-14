@@ -10,6 +10,63 @@ This manual walks a user through the steps needed to run the Atmospheric Tomogra
 
 Plume Dispersion Model
 =================================
+A Lagrangian stochastic (LS) model [@thomson1987criteria] as implemented
+in WindTrax Version 2.0.8.8 [@windtrax] was used for forward modeling
+i.e. to predict the concentrations given other parameters. Bayesian
+inference requires the use of a model that is cheap in terms of
+computational cost, since it would be evaluated for a large number of
+points in the parameter space. Since WindTrax software is GUI driven and
+computationally expensive, it does not form a good choice for use in
+Bayesian inference. Therefore we fitted a function to the output of the
+Windtrax (which is two dimensional array of concentrations). For a
+number of different stability conditions as measured by Monin-Obukov
+length, plumes for a source of unit strength over a grid were generated.
+For each such plume, the parameters of the function were determined by
+fitting the function to WindTrax output. In this way we built a library
+of plume functions, which was an input to the Bayesian inference.
+
+Gaussian dispersion model {#subsec:gauss}
+-------------------------
+
+Gaussian plume model [@sutton1932theory] is one of the most popular
+models used for atmospheric dispersion. The concentration $C(x,y,z)$ of
+a pollutant at $(x, y, z)$ is given by the equation .
+$$\label{equn:gauss_plume}
+  C(x,y,z) = \frac{Q}{2 \pi U \sigma_y \sigma_z} exp(-\frac{y^2}{2\sigma_y^2})\left[ exp(-\frac{(z-H)^2}{2\sigma_z^2}) + exp(-\frac{(z+H)^2}{2\sigma_z^2})\right].$$
+$C(x,y,z)$ is the concentration in grams per cubic meter. $H$ is the
+height of the source, $Q$ is the rate of release in grams per second,
+$U$ is the wind speed in meters per second. The parameters $\sigma_y$
+and $\sigma_z$ are the standard deviations of the time averaged plume
+concentration in downwind and vertical directions respectively.
+$\sigma_y$ and $\sigma_z$ depend on the downwind distance $x$ and
+atmospheric stability class. The most common form suggested for
+$\sigma_y$ and $\sigma_z$ is a power law in the downwind distance $x$:
+
+$$\begin{aligned}
+\sigma_y &= a x^b \\
+\sigma_z &= c x^d.
+\end{aligned}$$ 
+
+The coefficients $a, b, c$ and $d$ have also been determined by various
+researchers for the atmospheric stability classes. In situations where
+the assumptions made in determining the coefficients are met, these
+coefficients may be used. We have used off-the-shelf values for these parameters. These parameters have been categorized according to
+the Pasquill-Gifford atmospheric classification scheme while we use
+the Monin-Obhukov length to determine the atmospheric stability class
+and determine the coefficients to use. Table \[table:stab\_classes\]
+shows the relation between the two classification schemes. The parameters can be changed as explained in Section.
+
+  L                                                      Stability condition   PG stability class
+  --------------------- -------------------------------- --------------------- --------------------
+  Very large negative   $L < -10^5$ m                    Neutral               D
+  Large negative        $-10^5$ m $\leq L \leq -100$ m   Unstable              B
+  Small negative        $-100$ m $< L <0$                Very unstable         A
+  Small positive        $0 < L <100$ m                   Very stable           F
+  Large positive        $100$ m $\leq L \leq 10^5$ m     Stable                E
+  Very large positive   $L > 10^5$ m                     Neutral               D
+
+  : Monin-Obukhov Length L with respect to atmospheric stability
+  [@seinfeld2012atmospheric][]{data-label="table:stab_classes"}
 
 
 Installation
@@ -106,6 +163,22 @@ multiple data sets, hence they are stored in the file constants.py. This file is
 
 To change any of these values, open the file constants.py in a text editor such as notepad and edit the values. Make sure that the editor does not introduce any formatting in the file and that the file is saved with the extension ".py". 
 
+Modifying plume dispersion model parameters
+===========================================
+
+As mentioned in a previous (Section)[#subsec:gauss], the Gaussian plume dispersion model makes use of $4$ parameters called $a, b, c$ and $d$. The values for these parameters for each stability class are stored in the file called params.py. To change the parameters, open this file in a text editor. The relevant section is 
+```
+gaussian = {
+'A': {'a':0.0383,'b':1.281,'c':0.495,'d':0.873},
+'B': {'a':0.1393,'b':0.9467,'c':0.310,'d':0.897},
+'D': {'a':0.0856,'b':0.8650,'c':0.122,'d':0.916},
+'E': {'a':0.1094,'b':0.7657,'c':0.0934,'d':0.912},
+'F': {'a':0.05645,'b':0.8050,'c':0.0625,'d':0.911}
+}
+```
+
+You can edit these values and save the file. Make sure the file is saved with the extension ".py" as text editors usually add the extension ".txt" when a file is saved.   
+
 Choosing a plume dispersion model
 =================================
 
@@ -129,7 +202,7 @@ Bring up the commandline (Terminal utility on Mac and Linux, DOS prompt on Windo
 The script to be executed is src/run-tomography.py. The argument to the script is a prefix for the output files (explained below). 
 ```
 > python src/run-tomography.py gas-long
-Enter the input file name : gas.2015-05-27.csv 
+Enter the input file name : gas.csv 
 Enter the number of iterations for the MCMC simulation: 3000
 Enter the burn in for the MCMC simulation: 200
 Enter the thining variable for the MCMC simulation: 1
@@ -139,13 +212,13 @@ Enter the thining variable for the MCMC simulation: 1
 
 ```
 
-As the above output shows, the script will ask the user for a number of inputs. The first input is the name of the file that contains the data.  The file can be placed anywhere on your filesystem. Enter the full path or a path relative to the current directory. For instance, if the input file, say gas.2015-05-27.csv,  has been placed in /home/atmospheric-tomography/data, you can enter either 
+As the above output shows, the script will ask the user for a number of inputs. The first input is the name of the file that contains the data.  The file can be placed anywhere on your filesystem. Enter the full path or a path relative to the current directory. For instance, if the input file, say gas.csv,  has been placed in /home/atmospheric-tomography/data, you can enter either 
 ```
-Enter the input file name :/home/atmospheric-tomography/data/gas.2015-05-27.csv
+Enter the input file name :/home/atmospheric-tomography/data/gas.csv
 ```
 or
 ```
-Enter the input file name : data/gas.2015-05-27.csv
+Enter the input file name : data/gas.csv
 ```
 
 The script will now ask for the following inputs: the number of iterations for the MCMC simulation, burn in and the thinning variable. The script will now execute and display the progress. At the end of the execution, three output files will be produced : summary.csv, tau.png and Q.png. These files names  will be prefixed with the argument given to the run-tomography script. So for this example, since we entered
