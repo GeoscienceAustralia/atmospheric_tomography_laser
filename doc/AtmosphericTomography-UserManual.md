@@ -1,8 +1,16 @@
 % Atmospheric Tomography User Manual
 % Sangeeta Bhatia
 
+About the software
+=================================
+
+The Atmospheric Tomography software is a command line tool written in python to estimate the emission rate of a point source from concentration data. It implements an extension of the Bayesian inversion method outlined in [this](http://www.sciencedirect.com/science/article/pii/S187661021300550X) paper. 
 
 This manual walks a user through the steps needed to run the Atmospheric Tomography program. Please report any errors or omissions to the author.
+
+Plume Dispersion Model
+=================================
+
 
 Installation
 =================================
@@ -33,9 +41,9 @@ On the command prompt type
 
 If Python installation was successful, the command should run successfully and output the version of Python on your machine. 
 ```
-MacBook-Air:~ sangeetabhatia$ python --version
+> python --version
 Python 2.7.10
-MacBook-Air:~ sangeetabhatia$ 
+>
 
 ```
 If you get an error at this step, check if the PATH environment variable on your machine contains the path to python binaries. The Troubleshooting section of this manual contains more information on how to resolve this issue.
@@ -110,6 +118,42 @@ Choosing a method
 You can choose between line average (‘line\_average’) and line integral
 (‘line\_integral’).
 
+Atmospheric Tomography Scripts
+==============================
+Bring up the commandline (Terminal utility on Mac and Linux, DOS prompt on Windows) and navigate to the directory in which the source code has been downloaded. For instance, on my machine, since the source code is the path /Users/sangeetabhatia/GitWorkArea/atmospheric-tomography, I run the following commands in the directory /Users/sangeetabhatia/GitWorkArea/atmospheric-tomography.  
+```
+> pwd
+> /home/atmospheric-tomography
+```
+
+The script to be executed is src/run-tomography.py. The argument to the script is a prefix for the output files (explained below). 
+```
+> python src/run-tomography.py gas-long
+Enter the input file name : gas.2015-05-27.csv 
+Enter the number of iterations for the MCMC simulation: 3000
+Enter the burn in for the MCMC simulation: 200
+Enter the thining variable for the MCMC simulation: 1
+[-------------    36%                  ] 1093 of 3000 complete in 0.5 sec
+[-----------------69%------            ] 2083 of 3000 complete in 1.0 sec
+[-----------------100%-----------------] 3000 of 3000 complete in 1.5 sec
+
+```
+
+As the above output shows, the script will ask the user for a number of inputs. The first input is the name of the file that contains the data.  The file can be placed anywhere on your filesystem. Enter the full path or a path relative to the current directory. For instance, if the input file, say gas.2015-05-27.csv,  has been placed in /home/atmospheric-tomography/data, you can enter either 
+```
+Enter the input file name :/home/atmospheric-tomography/data/gas.2015-05-27.csv
+```
+or
+```
+Enter the input file name : data/gas.2015-05-27.csv
+```
+
+The script will now ask for the following inputs: the number of iterations for the MCMC simulation, burn in and the thinning variable. The script will now execute and display the progress. At the end of the execution, three output files will be produced : summary.csv, tau.png and Q.png. These files names  will be prefixed with the argument given to the run-tomography script. So for this example, since we entered
+```
+> python src/run-tomography.py gas-long
+```
+
+the output files are:gas-long-summary.csv, gas-long-Q.png and gas-long-tau.png. The summary files contains the mean, credible intervals and the quantiles for the parameters Q and tau of the model.
 Data cleanup and pre-analysis
 =============================
 
@@ -117,20 +161,13 @@ R is most suited to a lot of clean up and analysis tasks needed. This
 section is a compilation of some useful R commands and code snippets
 that were used.
 
-### Average over a fixed time interval
+Average over a fixed time interval
+----------------------------------
 
 The first step is to average the raw data over a fixed time interval for
 each reflector. This needs to be done because the frequency of the
 concentration data is collected every couple of seconds, which makes for
-a massive dataset. Before we can do that however, we extract the
-relevant columns of the gvl file using unix tools.
-
-      cut -d, -f2,4,8 gasFinder_11Mayto18May.csv > tmp
-      cut -d, -f9 gasFinder_11Mayto18May.csv > hour
-      paste -d" " tmp hour > gasFinder-relevant.csv 
-
-Once the relevant columns have been extracted, the python script
-**average\_over\_reflector.py** can be used to average over a time
+a massive dataset. Once the relevant columns have been extracted, the python script **average\_over\_reflector.py** can be used to average over a time
 interval over each reflector. Note that the column headers are hard
 coded in the script. While the order does not matter, the column
 containing the date should be named ‘Date’, the reflector column should
@@ -260,3 +297,12 @@ library in R.
     tmp.melt = tmp.melt[complete.cases(tmp.melt),]
 
 ### Long to wide
+
+Troubleshooting
+===============
+
+Cannot install python or PyMC.
+Make sure you have administrator priviliges.
+
+Script cannot find module.
+Edit pythonpath variable.
