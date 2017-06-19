@@ -2,14 +2,50 @@
 % Sangeeta Bhatia
 
 About the software
-=================================
+===================
 
 The Atmospheric Tomography software is a command line tool written in python to estimate the emission rate of a point source from concentration data. It implements an extension of the Bayesian inversion method outlined in [this](http://www.sciencedirect.com/science/article/pii/S187661021300550X) paper. 
 
 This manual walks a user through the steps needed to run the Atmospheric Tomography program. Please report any errors or omissions to the author.
 
-Bayes’ theorem applied to quantification and localisation
-=========================================================
+Installation
+=============
+
+Atmospheric Tomography code is available on [github](https://github.com/GeoscienceAustralia/atmospheric_tomography_laser). If you have git installed on your machine, the code can be checked out 
+```
+git clone https://github.com/GeoscienceAustralia/atmospheric_tomography_laser.git
+```
+The code can also be downloaded as a zip file from the link above. The code itself does not require any installation but you need to install Python to be able to run the code.
+
+Dependencies
+=============
+
+1. Python (version 3 or later)
+2. PyMC
+
+Instructions for installing PyMC are available [here](https://pymc-devs.github.io/pymc/INSTALL.html). This page also has instructions for installing the correct version of Python. Using a prebuilt distribution such as [Anaconda](http://continuum.io/downloads) is highly recommended.
+
+Test the environment
+=================================
+
+If the installation is successful, you should be able to run Python and import the PyMC module. To test this, open the terminal utility on Mac OS X or Linux or the DOS prompt on Windows. The DOS prompt can be opened by clicking on the Windows (or Run) button on your machine and typing CMD.
+
+On the command prompt type 
+```
+> python --version
+```
+
+If Python installation was successful, the command should run successfully and output the version of Python on your machine. 
+```
+> python --version
+Python 2.7.10
+>
+```
+If you get an error at this step, check if the PATH environment variable on your machine contains the path to python binaries. The Troubleshooting section of this manual contains more information on how to resolve this issue.
+
+
+Bayes’ theorem applied to quantification
+=========================================
 
 Let ${\mathcal{P}}$ be a plume dispersion model. ${\mathcal{P}}(x, y, z, Q, \hdots)$ is the concentration of a pollutant at a point $(x,y,z)$ due to a source located at the origin and emitting at a rate of $Q$. The ellipsis denote the other parameters necessary to drive the dispersion model. The emission rate of the source, $Q$ is the parameter to be estimated. Let the measured concentration at $(x,y,z)$ be $C$. Then, from Bayes’ Theorem, we have
 
@@ -104,7 +140,7 @@ in WindTrax Version 2.0.8.8 [@windtrax].
 Modifying plume dispersion model parameters
 ===========================================
 The models implemented in the software are called ‘gaussian’,
-‘semi-gaussian’ and ‘gauss\_poly’. The default model is the Gaussian model and its use is highly recommended.
+‘semi-gaussian’ and ‘gauss\_poly’. The default model is the Gaussian model and its use is highly recommended. 
 
 If you want to choose a different model, open the file *tomography.py* in a text editor and go to line 64.
 ```
@@ -132,47 +168,10 @@ gaussian = {
 
 You can change these values and save the file. Make sure the file is saved with the extension ".py" as text editors usually add the extension ".txt" when a file is saved.   
 
-
-Installation
-=================================
-
-Atmospheric Tomography code is available on [github](https://github.com/GeoscienceAustralia/atmospheric_tomography_laser). If you have git installed on your machine, the code can be checked out 
-```
-git clone https://github.com/GeoscienceAustralia/atmospheric_tomography_laser.git
-```
-The code can also be downloaded as a zip file from the link above. The code itself does not require any installation but you need to install Python to be able to run the code.
-
-Dependencies
-=================================
-
-1. Python (version 3 or later)
-2. PyMC
-
-Instructions for installing PyMC are available [here](https://pymc-devs.github.io/pymc/INSTALL.html). This page also has instructions for installing the correct version of Python. Using a prebuilt distribution such as [Anaconda](http://continuum.io/downloads) is highly recommended.
-
-Test the environment
-=================================
-
-If the installation is successful, you should be able to run Python and import the PyMC module. To test this, open the terminal utility on Mac OS X or Linux or the DOS prompt on Windows. The DOS prompt can be opened by clicking on the Windows (or Run) button on your machine and typing CMD.
-
-On the command prompt type 
-```
-> python --version
-```
-
-If Python installation was successful, the command should run successfully and output the version of Python on your machine. 
-```
-> python --version
-Python 2.7.10
->
-
-```
-If you get an error at this step, check if the PATH environment variable on your machine contains the path to python binaries. The Troubleshooting section of this manual contains more information on how to resolve this issue.
-
-Preparing the environment
-=================================
-
-Download the source and 
+From point measuresments to line average
+========================================
+The Atmospheric Tomography software was developed to estimate the emission rate of a point source from the avergaed measurements of concentrations along 
+the laser beams extending from a transmitter unit to several reflectors placed around the source. The plume dispersion models discussed above predict the concentration at a point $(x,y,z)$. The predicted line sensor reading is therefore obtained by determining the concentration at several points along a line from the laser to the reflector, and computing the average or numerical line integral. The scripts will calculate the line averaged readings automatically.
 
 Data pre-processing 
 ===================
@@ -202,7 +201,7 @@ Often the data are stored in the wide rather than the long format that is requir
 Date, Reflector_1, Reflector_2, Reflector_3...
 ```
 
-Later sections have some suggestions for reformatting the concentration data and merging the weather and concentration records.
+The author of this software carried out the analysis in the statistical software R. Some suggestions for reformatting the concentration data and merging the weather and concentration records as well as calculating the background concentration have been included in the Appendix.
 
 Another consideration is that the frequency at which the weather and concentration data are recorded could be different. For instance, the meteorological data might be collected every half an hour while the concentration data could be recorded several times in a minute. In this case, we found it useful to average the concentration records to the frequency of the weather records. A script has been provided to do this and instructions for using the script are provided in a later section.  
 
@@ -215,21 +214,27 @@ multiple data sets, hence they are stored in the file constants.py. This file is
 1.  samples: The number of samples to be taken along the line from the laser to
     the mirror. The default value is 100. If the path is very long, you might want to increase this number to improve accuracy.$(x, y)$ Co-ordinates of the reflectors
 
-2.  H: Height of the source $z_0$ in metres. Do not write the unit.
+2.  H: Height of the gas source $z_0$ in metres. Do not write the unit.
 
 3.  molar_mass: Molar mass of the gas in grams per mole. Height of the reflectors $z$ in metres,
 
 4. elevation: The height of each reflectors in meters. Notice that this is a comma-separated list in square brackets. You should enter the height of each reflector in this list, even if they are all same. So if the experiment has $n$ reflectors, this list would have $n$ numbers  
 
-5. mirror: The $(x, y)$ co-ordinates of the mirrors. This is a comma-separated list of $(x, y)$ co-ordinates where each set of co-ordinates is written within square brackets. The number of pairs in this list should be $n$ if you have $n$ reflectors.
+5. mirror: The $(x, y)$ co-ordinates of the laser source(s). This is a comma-separated list of $(x, y)$ co-ordinates where each set of co-ordinates is written within square brackets. The number of pairs in this list should be $n$ if you have $n$ reflectors.
  
 6. reflectors : The $(x, y)$ co-ordinates of the reflectors. 
 
 To change any of these values, open the file constants.py in a text editor such as notepad and edit the values. Make sure that the editor does not introduce any formatting in the file and that the file is saved with the extension ".py". 
 
+All the dispersion models considered in section \[sec:fwd\_model\] place
+the origin at the source and the horizontal axis along the plume
+centerline.
+
 Atmospheric Tomography Scripts
 ==============================
-Bring up the commandline (Terminal utility on Mac and Linux, DOS prompt on Windows) and navigate to the directory in which the source code has been downloaded. For instance, on my machine, since the source code is the path /Users/sangeetabhatia/GitWorkArea/atmospheric-tomography, I run the following commands in the directory /Users/sangeetabhatia/GitWorkArea/atmospheric-tomography.  
+Bring up the commandline (Terminal utility on Mac and Linux, DOS prompt on Windows) and navigate to the directory in which the source code has been downloaded. For instance, on my machine, since the source code is the path 
+/home/atmospheric-tomography, I run the following commands in the directory 
+/home/atmospheric-tomography.  
 ```
 > pwd
 > /home/atmospheric-tomography
@@ -257,161 +262,119 @@ or
 Enter the input file name : data/gas.csv
 ```
 
-The script will now ask for the following inputs: the number of iterations for the MCMC simulation, burn in and the thinning variable. The script will now execute and display the progress. At the end of the execution, three output files will be produced : summary.csv, tau.png and Q.png. These files names  will be prefixed with the argument given to the run-tomography script. So for this example, since we entered
+The script will now ask for the following inputs: the number of iterations for the MCMC simulation, burn in and the thinning variable. 
+
+Number of iterations, burn-in and thinning variable
+====================================================
+
+Number of iterations
+--------------------
+
+A MCMC simulation proceeds by picking random values from the parameter space and evaluating the likelihood of the data for these values. The number of iterations is the number of times this process should be repeated. The trade-off here is between efficiency and accuracy - choosing a very high value (say 10 million) would cause the script to run for a much longer time  or even crash. We suggest that you use a moderately high value (say 30000) and inspect the output. If the output is not satisfactory, you can re-run the analysis. 
+
+Burn-in
+-------
+Burn in is the number of initial samples that are discarded. There is a lot of academic discussion about the value to choose for this variable. For our purposes, it would be enough to choose a small value (say 1000) and inspect the output to make adjustments.
+
+Thinning Variable
+-----------------
+Thinning is used to reduce the auto-correlation between the samples from MCMC. Thinning varaible set to 2 instructs the software to discard alternate samples. The default is 1. If you set this to a higher number, consider increaseing the number of iterations. Alternately, you can choose not to use thinning and run the simulation longer by increasing the iterations.
+
+Output from the script
+----------------------
+
+At the end of the execution, three output files will be produced : summary.csv, tau.png and Q.png. These files names  will be prefixed with the argument given to the run-tomography script. So for this example, since we entered
 ```
 > python src/run-tomography.py gas-long
 ```
 
-the output files are:gas-long-summary.csv, gas-long-Q.png and gas-long-tau.png. The summary files contains the mean, credible intervals and the quantiles for the parameters Q and tau of the model.
-Data cleanup and pre-analysis
-=============================
+the output files are:gas-long-summary.csv, gas-long-Q.png and gas-long-tau.png. The summary files contains the mean, credible intervals and the quantiles for the parameters Q and $tau$ of the model.
 
-R is most suited to a lot of clean up and analysis tasks needed. This
-section is a compilation of some useful R commands and code snippets
-that were used.
+```
+> cat gas-long-summary.csv
+Parameter, Mean, SD, MC Error, Lower 95% HPD, Upper 95% HPD, q2.5, q25, q50, q75, q97.5
+Q, 0.0761835622776, 0.0083433562919, 0.000679163092623, 0.05641991631731031, 0.08835151368385437, 0.0602347048492, 0.0720073345646, 0.0773136743722, 0.080788117267, 0.0927831965643
+tau, 0.610945767146, 0.0309973605468, 0.00279190239341, 0.5581020990278773, 0.6782829570190929, 0.54534570834, 0.590228818219, 0.610630539386, 0.630884224234, 0.678282957019
+```
 
-Average over a fixed time interval
-----------------------------------
+
+More information
+----------------
+There are a number of online resources discussion Bayesian statistics. For PyMC, [this](https://www.youtube.com/watch?v=XbxIo7ScVzc) video can be a useful starting point. It also covers the basics of Bayesian statistics. 
+
+Other Utilities : Average over a fixed time interval
+====================================================
 
 The first step is to average the raw data over a fixed time interval for
-each reflector. This needs to be done because the frequency of the
-concentration data is collected every couple of seconds, which makes for
-a massive dataset. Once the relevant columns have been extracted, the python script **average\_over\_reflector.py** can be used to average over a time
-interval over each reflector. Note that the column headers are hard
-coded in the script. While the order does not matter, the column
-containing the date should be named ‘Date’, the reflector column should
-be called ‘Reflector’ and the concentration data should be present in a
-column called ‘PPM’.
+each reflector. This needs to be done because while the
+concentration data is collected every couple of seconds, the weather data might be collected at a much lower frequency. This can easily be done in R. A python script called *average\_over.py* is also available in this repository in the folder util to do this. The arguments to this script are summarised below.
 
-    python util/average_over_reflector.py 
-    Please enter name of the input data file :  
-    gasFinder-relevant.csv
-    Please enter the start time in the format 
-    DD/MM/YYYY Hour:Min:Sec AM/PM :  11/05/2015 8:00:00 AM
+Options
+-------
+1. -infile or -in. Input file. The script should either be run from the
+same directory (folder) in which the input file is present, or the file should be specified with the full path relative to the location of the script.
 
-    Please enter the end time in the format 
-    DD/MM/YYYY Hour:Min:Sec AM/PM : 18/05/2015 05:00:00 PM
+2. -timestamp or -ts Header (case sensitive) of the column containing time.
+-format the format in which the time is written in the file. E.g. if the entry is 00:00:05, the format should be %H:%M:%S. More information below.
 
-    Please enter the averaging interval in minutes : 30
-    Please enter the number of reflectors: 7
+3. -over or -o  Average over this interval specified in hours:minues:seconds. E.g. if you want to average over every one minute, give 00:01:00. Both the end points are included when average is computed.
 
-This script will write the output in file output.csv. The output file
-should be renamed appropriately since a subsequent run of the python
-script **average\_over\_reflector.py** will overwrite any file called
-output.csv in the same directory.
+4. -cols -c  If you want to average only specific columns, then you can specify the column names in this option. This field is optional.
 
-### Calculating background concentration
+5. -exclude  These are the fields which cannot or should not be included in the output. This field is optional but it is important to specify any columns containing non-numeric data to this field. You can specify any number of columns to be excluded as a space separated list.
 
-      gasfinder = read.csv("data/gasFinder-averaged.csv")
-      gasfinder[is.na(gasfinder)] = 0
-      for(i in 1:nrow(gasfinder))
-      {
-       vals = gasfinder[i,2:8]
-       smallest.5 = sort(vals)[1:5]
-       smallest.5 = data.frame(smallest.5[,apply(smallest.5>0,2,all)])
-       bg = apply(smallest.5, 1, FUN=mean)
-       gasfinder$Background[i] = bg
-     }
+6. -outfile or -out. the output file. Note that it should be different from the name of the input file. If unspecified, the output will be written to the file <infile>_out.csv in the same folder in which the input file is present.
 
-### Plotting
+For the following input file (from Boreal Laser GasFinder2), suppose we wish to average over 10 minutes the column PPM.
 
-Plotting is best done with the R package **ggplot2**.
+```
+> head infile
+Header,Reflector,PPMM,PPM,R2,Distance,Light,Date,Hour,Serial,Check
+$GFDTA,7,85.4,1.483,98,57.57,4852,11/05/2015,8:22:17 AM, CH4OP-1044,1*55
+$GFDTA,7,85.5,1.485,98,57.57,4842,11/05/2015,8:22:19 AM, CH4OP-1044,1*5B
+$GFDTA,1,65.1,1.600,98,40.7,3770,11/05/2015,8:22:35 AM, CH4OP-1044,1*5C
+$GFDTA,1,65.1,1.600,98,40.7,3698,11/05/2015,8:22:36 AM, CH4OP-1044,1*58
+```
 
-    library(reshape2)
-    library(plyr)
-    library(ggplot2)
-    # Use this palette since the default palette is 
-    # very poor.
-    cbPalette = c("#999999", "#E69F00", "#56B4E9",   
-                   "#009E73", "#F0E442", "#0072B2", 
-                   "#D55E00", "#CC79A7") 
-                   
-    # ggplot requires data in long format. Use reshape2.
-    gas.long = melt(gasfinder, id.vars = "Date")
-    gas.long = rename(gas.long, c("variable"="Reflector",
-                                  "value"="PPM"))
+The script would be executed as
 
-    gas.long = gas.long[gas.long$PPM>0,]
-    gas.long$Reflector = factor(gas.long$Reflector)
-    # Meaningful column names. Requies plyr
-    gas.long = gas.long[complete.cases(gas.long),]
-    p = ggplot(gas.long, aes(Date, PPM, color=Reflector)) + 
-        geom_point() 
-    p = p + scale_colour_manual(values=cbPalette)
-    p = p + xlab("Date") + scale_x_discrete(breaks=NULL)          
-    p = p + ggtitle("Averaged concentration data from 
-                     11th May to 18th May")              
-    p = p + theme(plot.title = element_text(lineheight=1.0, 
-                                            face="bold"))       
-    print(p)
+```
+> python average_over.py -in infile -ts Hour -format %I:%M:%S %p -o
+00:10:00 -cols PPM -exclude Header Reflector Serial Check Date -out tmp
+> head tmp
+Hour,PPMM
+08:22:17 AM,80.47239263803684
+08:32:23 AM,82.25091743119266
+08:43:03 AM,80.66826923076927
+```
 
-Filtering out data based on time
---------------------------------
+You can construct the format for the timestamp by looking at the
+directives [here](https://docs.python.org/3/library/datetime.html#strftime-strptimebehavior)
 
-R can be used to apply a filter based on the time of day. E.g., suppose
-we wish to exclude the data from 11:56 AM to 12:02 PM for 12^th^ May.
-
-    gasfinder = read.csv("data/1105-1805-raw.csv")
-    # What we would do with unix command line tools.
-    gasfinder$Date = paste(gasfinder$Date, gasfinder$Hour, 
-                           sep = " ")
-    gasfinder$Date = strptime(gasfinder$Date, 
-                              format = "%d/%m/%Y %I:%M:%S %p")
-    gasfinder = gasfinder[,c(2,4,8)]
-    start.high = as.POSIXct("2015-05-12 11:56:00")
-    end.high = as.POSIXct("2015-05-12 12:02:00")
-    first.few = gasfinder[gasfinder$Date < start.high, ]
-    last.few = gasfinder[gasfinder$Date > end.high, ]
-    gasfinder = rbind(first.few, last.few)
-    write.csv(gasfinder, file = "1105-1805-raw-filtered.csv", 
-        quote = F, row.names = F)
-
-### Filtering out very low values
-
-Very low concentration values can mess up the analysis. To filter out
-the rows for a reflector where the concentration is smaller than the
-standard deviation of data for that reflector, we can use the
-split-apply-combine strategy.
-
-      library(plyr)
-      filter_sd <- function(x){return(x[x$PPM > sd(x$PPM),])}
-      tmp = ddply(gas.long, .(Reflector), filter_sd)
-
-Merging weather and concentration data
---------------------------------------
-
-The concentration data for a time perios needs to be affixed to the
-weather data for the same period. To do this read in both data sets in
-the wide format and use the **merge** utility in R.
-
-    weather = read.csv("1105-1805-weather.csv")
-    tmp = merge(weather, gasfinder.wide, all.y = TRUE)
-
-Reshaping data
---------------
-
-### Wide to long
-
-The python scripts for tomogrpahy need the data to be in long format.
-Data can be reshaped from wide to long format using the **reshape2**
-library in R.
-
-    library(reshape2)
-    # melt does not work with Date columns. 
-    # We need to convert it to character.
-    tmp$Date = as.character(tmp$Date)
-    tmp.melt = melt(tmp, id.vars = c("Date","T","WindSpeed",
-                                     "WindDirection","MO.Length"))
-    # Remove rows with incomplete data.
-    tmp.melt = tmp.melt[complete.cases(tmp.melt),]
-
-### Long to wide
 
 Troubleshooting
 ===============
 
-Cannot install python or PyMC.
-Make sure you have administrator priviliges.
+1. Cannot install python or PyMC.
+   Make sure you have administrator priviliges on your machine. 
 
-Script cannot find module.
-Edit pythonpath variable.
+2. Script cannot find module PyMC.
+   Python finds the installed modules by referring to an environment variable called pythonpath. If you have installed the PyMC module correctly, you would find it in a directory called site-packages. Locate this directory in your filesystem and copy its path. On Mac/Linux, add the following line to the file .bash_profile. This file is located in your home directory.
+
+   ```
+   export PYTHONPATH=$PYTHONPATH:/home/anaconda/lib/python3.6/site-packages/
+   ```
+   
+   Replace the path after the colon with the location of the site-packages directory on your filesystem. 
+   The instructions for modifying environment variables on a Windows machine are availble [here](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10).
+
+3. Cannot find python.
+   The operating system finds the python executables using the PATH environment variable. Locate the bin folder that contains the python executables and modify the PATH variable to include it by editing the bash_profile on Mac/Linux. 
+   ```
+   PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
+   export PATH
+   ```
+\newpage
+
+References
+===============
