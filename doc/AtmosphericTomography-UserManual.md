@@ -1,15 +1,13 @@
 % Atmospheric Tomography User Manual
 % Sangeeta Bhatia
 
-About the software
-===================
+# About the software
 
 The Atmospheric Tomography software is a command line tool written in python to estimate the emission rate of a point source from concentration data. It implements an extension of the Bayesian inversion method outlined in [this](http://www.sciencedirect.com/science/article/pii/S187661021300550X) paper. 
 
 This manual walks a user through the steps needed to run the Atmospheric Tomography program. Please report any errors or omissions to the author.
 
-Installation
-=============
+# Installation
 
 Atmospheric Tomography code is available on [github](https://github.com/GeoscienceAustralia/atmospheric_tomography_laser). If you have git installed on your machine, the code can be checked out 
 ```
@@ -17,16 +15,14 @@ git clone https://github.com/GeoscienceAustralia/atmospheric_tomography_laser.gi
 ```
 The code can also be downloaded as a zip file from the link above. The code itself does not require any installation but you need to install Python to be able to run the code.
 
-Dependencies
-=============
+## Dependencies
 
 1. Python (version 3 or later)
 2. PyMC
 
 Instructions for installing PyMC are available [here](https://pymc-devs.github.io/pymc/INSTALL.html). This page also has instructions for installing the correct version of Python. Using a prebuilt distribution such as [Anaconda](http://continuum.io/downloads) is highly recommended.
 
-Test the environment
-=================================
+## Test the environment
 
 If the installation is successful, you should be able to run Python and import the PyMC module. To test this, open the terminal utility on Mac OS X or Linux or the DOS prompt on Windows. The DOS prompt can be opened by clicking on the Windows (or Run) button on your machine and typing CMD.
 
@@ -43,9 +39,7 @@ Python 2.7.10
 ```
 If you get an error at this step, check if the PATH environment variable on your machine contains the path to python binaries. The Troubleshooting section of this manual contains more information on how to resolve this issue.
 
-
-Bayes’ theorem applied to quantification
-=========================================
+# Bayes’ theorem applied to quantification
 
 Let ${\mathcal{P}}$ be a plume dispersion model. ${\mathcal{P}}(x, y, z, Q, \hdots)$ is the concentration of a pollutant at a point $(x,y,z)$ due to a source located at the origin and emitting at a rate of $Q$. The ellipsis denote the other parameters necessary to drive the dispersion model. The emission rate of the source, $Q$ is the parameter to be estimated. Let the measured concentration at $(x,y,z)$ be $C$. Then, from Bayes’ Theorem, we have
 
@@ -73,13 +67,13 @@ P(Q \mid C_1, C_2, \hdots C_N) &\propto \prod_{i=1}^{N} \frac{1}{2 \tau} e^{-\le
 The prior for the emission rate is set to a uniform probability
 distribution on a small interval (0 to 1). The prior on the spread $\tau$ of residuals is set to an uninformative prior that returns a log-likelihood of zero irrespective of the arguments passed to it. 
 
-Changing the priors on $Q$ and $\tau$
--------------------------------------
+## Changing the priors on $Q$ and $\tau$
+
 These can be changed in the file *tomography.py*. Changing this file requires a knowledge of python. Many useful priors are made available by PyMC. PyMC documentation also contains helpful information on writing your own priors.
 
+# Dispersion Models
 
-Gaussian dispersion model {#sec:gauss}
-=======================================
+## Gaussian dispersion model {#sec:gauss}
 
 The plume dispersion model implemented is the Gaussian plume model [@sutton1932theory], which is one of the most popular
 models used for atmospheric dispersion. The concentration $C(x,y,z)$ of
@@ -121,8 +115,7 @@ shows the relation between the two classification schemes. The parameters can be
   : Monin-Obukhov Length L with respect to atmospheric stability
   [@seinfeld2012atmospheric][]{data-label="table:stab_classes"}
 
-Other Plume Dispersion Models
-=============================
+## Other Plume Dispersion Models
 
 Two other plume dispersion models are implemented. The first of these, which we call the semi-gaussian model presented in @humphries2012atmospheric] has the the functional form:
 $$\label{equn:semigaussian}
@@ -134,11 +127,10 @@ $$\label{equn:gauss_poly}
 
 This is called the gaussian-polynomial hybrid function. 
 
-The parameters for these models for various values of the Monin-Obukov length (i.e., different stability classes) were derived by fitting the concentrations from a Lagrangian stochastic (LS) model [@thomson1987criteria] as implemented
+The parameters for these models for various values of the Monin-Obhukov length (i.e., different stability classes) were derived by fitting the concentrations from a Lagrangian stochastic (LS) model [@thomson1987criteria] as implemented
 in WindTrax Version 2.0.8.8 [@windtrax]. 
 
-Modifying plume dispersion model parameters
-===========================================
+# Modifying plume dispersion model parameters
 The models implemented in the software are called ‘gaussian’,
 ‘semi-gaussian’ and ‘gauss\_poly’. The default model is the Gaussian model and its use is highly recommended. 
 
@@ -168,13 +160,12 @@ gaussian = {
 
 You can change these values and save the file. Make sure the file is saved with the extension ".py" as text editors usually add the extension ".txt" when a file is saved.   
 
-From point measuresments to line average
-========================================
-The Atmospheric Tomography software was developed to estimate the emission rate of a point source from the avergaed measurements of concentrations along 
+# From point measurements to line average
+
+The Atmospheric Tomography software was developed to estimate the emission rate of a point source from the averaged measurements of concentrations along 
 the laser beams extending from a transmitter unit to several reflectors placed around the source. The plume dispersion models discussed above predict the concentration at a point $(x,y,z)$. The predicted line sensor reading is therefore obtained by determining the concentration at several points along a line from the laser to the reflector, and computing the average or numerical line integral. The scripts will calculate the line averaged readings automatically.
 
-Data pre-processing 
-===================
+# Preparing the data files 
 
 The first step is to get the data in the format expected by the scripts.
 The input file should be a comma separated file with the following
@@ -188,7 +179,7 @@ columns:
 
 4.  Wind direction in degrees North of East,
 
-5.  Monin-Obukov length in metres,
+5.  Monin-Obhukov length in metres,
 
 6.  Reflector id (should be an integer) and
 
@@ -201,12 +192,11 @@ Often the data are stored in the wide rather than the long format that is requir
 Date, Reflector_1, Reflector_2, Reflector_3...
 ```
 
-The author of this software carried out the analysis in the statistical software R. Some suggestions for reformatting the concentration data and merging the weather and concentration records as well as calculating the background concentration have been included in the Appendix.
+The author of this software carried out the analysis in the statistical software R. Some suggestions for reformatting the concentration data and merging the weather and concentration records as well as calculating the background concentration have been included in the file *Pre-analysis.RMD*. This is R markdown file. You can open it with a text editor or with R Studio.
 
 Another consideration is that the frequency at which the weather and concentration data are recorded could be different. For instance, the meteorological data might be collected every half an hour while the concentration data could be recorded several times in a minute. In this case, we found it useful to average the concentration records to the frequency of the weather records. A script has been provided to do this and instructions for using the script are provided in a later section.  
 
-Customizing the model parameters 
-================================
+# Customizing model parameters 
 
 The following model parameters are likely to remain unchanged across
 multiple data sets, hence they are stored in the file constants.py. This file is in the directory atmospheric-tomography/src in the downloaded source code. It consists of the following key-value pairs:
@@ -230,8 +220,8 @@ All the dispersion models considered in section \[sec:fwd\_model\] place
 the origin at the source and the horizontal axis along the plume
 centerline.
 
-Atmospheric Tomography Scripts
-==============================
+# Atmospheric Tomography Scripts
+  
 Bring up the commandline (Terminal utility on Mac and Linux, DOS prompt on Windows) and navigate to the directory in which the source code has been downloaded. For instance, on my machine, since the source code is the path 
 /home/atmospheric-tomography, I run the following commands in the directory 
 /home/atmospheric-tomography.  
@@ -264,24 +254,21 @@ Enter the input file name : data/gas.csv
 
 The script will now ask for the following inputs: the number of iterations for the MCMC simulation, burn in and the thinning variable. 
 
-Number of iterations, burn-in and thinning variable
-====================================================
+## Number of iterations, burn-in and thinning variable
 
-Number of iterations
---------------------
+### Number of iterations
 
 A MCMC simulation proceeds by picking random values from the parameter space and evaluating the likelihood of the data for these values. The number of iterations is the number of times this process should be repeated. The trade-off here is between efficiency and accuracy - choosing a very high value (say 10 million) would cause the script to run for a much longer time  or even crash. We suggest that you use a moderately high value (say 30000) and inspect the output. If the output is not satisfactory, you can re-run the analysis. 
 
-Burn-in
--------
+### Burn-in
+
 Burn in is the number of initial samples that are discarded. There is a lot of academic discussion about the value to choose for this variable. For our purposes, it would be enough to choose a small value (say 1000) and inspect the output to make adjustments.
 
-Thinning Variable
------------------
-Thinning is used to reduce the auto-correlation between the samples from MCMC. Thinning varaible set to 2 instructs the software to discard alternate samples. The default is 1. If you set this to a higher number, consider increaseing the number of iterations. Alternately, you can choose not to use thinning and run the simulation longer by increasing the iterations.
+### Thinning Variable
 
-Output from the script
-----------------------
+Thinning is used to reduce the auto-correlation between the samples from MCMC. Thinning variable set to 2 instructs the software to discard alternate samples. The default is 1. If you set this to a higher number, consider increasing the number of iterations. Alternately, you can choose not to use thinning and run the simulation longer by increasing the iterations.
+
+## Output from the script
 
 At the end of the execution, three output files will be produced : summary.csv, tau.png and Q.png. These files names  will be prefixed with the argument given to the run-tomography script. So for this example, since we entered
 ```
@@ -292,18 +279,29 @@ the output files are:gas-long-summary.csv, gas-long-Q.png and gas-long-tau.png. 
 
 ```
 > cat gas-long-summary.csv
-Parameter, Mean, SD, MC Error, Lower 95% HPD, Upper 95% HPD, q2.5, q25, q50, q75, q97.5
-Q, 0.0761835622776, 0.0083433562919, 0.000679163092623, 0.05641991631731031, 0.08835151368385437, 0.0602347048492, 0.0720073345646, 0.0773136743722, 0.080788117267, 0.0927831965643
-tau, 0.610945767146, 0.0309973605468, 0.00279190239341, 0.5581020990278773, 0.6782829570190929, 0.54534570834, 0.590228818219, 0.610630539386, 0.630884224234, 0.678282957019
+Parameter, Mean, SD, MC Error, Lower 95% HPD, Upper 95% HPD, 
+q2.5, q25, q50, q75, q97.5
+Q, 0.0761835622776, 0.0083433562919, 0.000679163092623, 
+0.05641991631731031, 0.08835151368385437, 0.0602347048492, 
+0.0720073345646, 0.0773136743722, 0.080788117267, 0.0927831965643
+tau, 0.610945767146, 0.0309973605468, 0.00279190239341, 
+0.5581020990278773, 0.6782829570190929, 0.54534570834, 
+0.590228818219, 0.610630539386, 0.630884224234, 0.678282957019
 ```
 
+The script will also produce two graphs - one for the posterior probability distribution of the source emission rate $Q$ and the other for the posterior probability of the width of the error $\tau$. Each group consists of three subplots. In the top left hand corner, you would see a graph of the trace of the MCMC run. This is a graph of the values sampled from the parameter space (in our case 0 to 1). The first few thousand runs would be evenly spread across the parameter space while towards the end the samples should be less widely spread. If this is not the case, you might want to re-run the simulation.
 
-More information
-----------------
+The plot in the bottom left corner is the auto-correlation plot. The initial part of the graph may display a high degree of auto correlation but it should reduce as the MCMC simulation progressed. If you see high auto correlation values throughout the simulation, consider running the simulation with more iterations and/or thinning variable set to more than 1.
+
+The plot on the right side is the posterior probability distribution. The 95% credible interval is marked by dashed lines.
+
+![An output graph showing the posterior distribution, the trace and auto-correlation plots](gas-long.2015-05-27.csv-Q.png "Posterior Distribution of the source emission rate")
+
+## More information
+
 There are a number of online resources discussion Bayesian statistics. For PyMC, [this](https://www.youtube.com/watch?v=XbxIo7ScVzc) video can be a useful starting point. It also covers the basics of Bayesian statistics. 
 
-Other Utilities : Average over a fixed time interval
-====================================================
+# Other Utilities : Average over a fixed time interval
 
 The first step is to average the raw data over a fixed time interval for
 each reflector. This needs to be done because while the
@@ -352,11 +350,10 @@ You can construct the format for the timestamp by looking at the
 directives [here](https://docs.python.org/3/library/datetime.html#strftime-strptimebehavior)
 
 
-Troubleshooting
-===============
+# Troubleshooting
 
 1. Cannot install python or PyMC.
-   Make sure you have administrator priviliges on your machine. 
+   Make sure you have administrator privileges on your machine. 
 
 2. Script cannot find module PyMC.
    Python finds the installed modules by referring to an environment variable called pythonpath. If you have installed the PyMC module correctly, you would find it in a directory called site-packages. Locate this directory in your filesystem and copy its path. On Mac/Linux, add the following line to the file .bash_profile. This file is located in your home directory.
@@ -366,7 +363,7 @@ Troubleshooting
    ```
    
    Replace the path after the colon with the location of the site-packages directory on your filesystem. 
-   The instructions for modifying environment variables on a Windows machine are availble [here](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10).
+   The instructions for modifying environment variables on a Windows machine are available [here](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10).
 
 3. Cannot find python.
    The operating system finds the python executables using the PATH environment variable. Locate the bin folder that contains the python executables and modify the PATH variable to include it by editing the bash_profile on Mac/Linux. 
@@ -374,7 +371,10 @@ Troubleshooting
    PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
    export PATH
    ```
+
+4. The results look all wrong.
+   While there are many reasons this can happen, do check that the units of all parameters are correct i.e., pressure is in pascals, temperature is degree Celsius etc. Note that the units are not to be specified in the input file. Make sure the background subtracted concentration is in PPM.
+
 \newpage
 
-References
-===============
+# References

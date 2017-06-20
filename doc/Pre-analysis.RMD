@@ -1,0 +1,194 @@
+---
+title: "AtmosphericTomography-PreAnalysis"
+author: "Sangeeta Bhatia"
+date: "3 January 2016"
+output:
+  pdf_document:
+    fig_caption: true
+          
+---
+
+```{r setup, hide, message=FALSE, warning=FALSE, echo=FALSE}
+library(knitr)
+opts_chunk$set(cache=TRUE, tidy=TRUE)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(magrittr)
+library(lubridate)
+
+ginninderra.tz = "Australia/Canberra"
+concentration = "data/unprocessed/2105-0706/Boreal laser-standard release2.csv"
+weather.file = "0805-1305-weather.csv"
+# Color blind palette
+cbPalette= c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", 
+             "#D55E00", "#CC79A7")
+```
+
+## Reading, formatting and plotting the raw data
+
+The first step is to average the raw data over a fixed time interval for each reflector. This needs to be done because the concentration data is collected every couple of seconds, which makes for a massive dataset. At the same time however, the weather data is sampled every 30 minutes.
+```{r}
+gasfinder = read.csv(concentration) %>% .[, c("Date","Hour", "Reflector", "PPM")]
+gasfinder$Date = paste(gasfinder$Date, gasfinder$Hour, sep=" ")
+gasfinder %<>% .[,! names(.) %in% c("Hour")]
+gasfinder %<>% 
+  mutate(Date = Date %>% parse_date_time(c("%d/%m/%Y %I:%M:%S %p"), exact=T, tz=ginninderra.tz))
+gasfinder$Reflector = factor(gasfinder$Reflector)
+```
+Now we are ready to visually inspect the raw data. 
+
+```{r, echo=FALSE}
+raw.title = "Concentration Data from 08-05 to 13-05"
+source("extract-changepoints.R")
+```
+
+
+```{r rawplot ,echo=FALSE, fig.cap={"The dark and light rectangles denote respectively periods of high and low rates of methane release."}}
+
+p = ggplot() + geom_rect(data=data.frame(low.start, low.end), aes(xmin=low.start, xmax=low.end, ymin=-Inf, ymax=Inf), fill="black")
+p = p + geom_rect(data=data.frame(high.start, high.end), aes(xmin=high.start, xmax=high.end, ymin=-Inf, ymax=Inf), fill="black")
+p = p + geom_point(data=gasfinder, mapping = aes(Date, PPM, color=Reflector)) + scale_colour_manual(values=cbPalette)
+p = p + theme_bw() + theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) + ggtitle(raw.title)
+print(p)
+```
+
+### Applying time based filters
+
+Visual inspection of the data suggests that the impact of high release rate of methane is localised to the brief period for which this rate was maintained. So we can filter out only these time periods (12^th^ May (11:56am-12:02pm) and 13^th^ May (14:13-14:36pm)).
+
+```{r}
+start.high = as.POSIXct("2015-05-12 11:56:00", tz=ginninderra.tz)
+end.high = as.POSIXct("2015-05-12 12:02:00", tz=ginninderra.tz)
+gasfinder %<>% .[(.$Date < start.high | .$Date > end.high),]
+
+start.high = as.POSIXct("2015-05-13 14:13:00", tz=ginninderra.tz)
+end.high = as.POSIXct("2015-05-13 14:36:00", tz=ginninderra.tz)
+gasfinder %<>% .[(.$Date < start.high | .$Date > end.high),]
+```
+
+```{r, echo=FALSE}
+raw.title = "Concentration Data from 08-05 to 13-05 without high release periods"
+```
+
+
+
+```{r rawplot2, echo=FALSE, fig.cap={"The dark and light rectangles denote respectively periods of high and low rates of methane release."}}
+p = ggplot() + geom_rect(data=data.frame(low.start, low.end), aes(xmin=low.start, xmax=low.end, ymin=-Inf, ymax=Inf), fill="black")
+p = p + geom_rect(data=data.frame(high.start, high.end), aes(xmin=high.start, xmax=high.end, ymin=-Inf, ymax=Inf), fill="black")
+p = p + geom_point(data=gasfinder, mapping = aes(Date, PPM, color=Reflector)) + scale_colour_manual(values=cbPalette)
+p = p + theme_bw() + theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) + ggtitle(raw.title)
+print(p)
+```
+
+
+
+
+Find the 30 minute average by reflector and inspect it visually. That's a breeze in R.
+```{r}
+thirty.mins = cut(gasfinder$Date, breaks="30 min")
+gasfinder.avg = gasfinder %>% split(thirty.mins) %>% 
+            ldply(function(dat) {ddply(dat, .(Reflector), function(x) mean(x$PPM))}) %>%
+            plyr::rename(c(".id"="Date", "V1"="PPM"))
+gasfinder.avg$Date = as.POSIXct(gasfinder.avg$Date, tz=ginninderra.tz)
+```
+
+```{r, echo=FALSE}
+ggplot(gasfinder.avg, aes(Date, PPM, color=Reflector)) + geom_point() + scale_colour_manual(values=cbPalette) + ggtitle("Concentration Data Averaged over 30 mins") %>%
+print
+```
+
+## Determining background concentration
+
+We must first convert from the long format to the wide format for subsequent analysis.
+```{r, echo=TRUE}
+gasfinder.avg %<>% reshape2::dcast(Date ~ Reflector, value.var="PPM")
+```
+
+Background concentration is determined as the average of the smallest five non-zero concentration values.
+
+```{r bgcalc, echo=TRUE, tidy=TRUE}
+mean.smallest.n = function(row, n){
+  bg = row  %>% sort(na.last = NA) %>% .[1:min(n, dim(.)[2])] %>% .[which(. > 0)] %>% mean
+  return(bg)
+}
+bg= apply(gasfinder.avg[,2:8], MARGIN = 1, FUN = mean.smallest.n, n=5)
+gasfinder.avg %<>% cbind(.,Background=bg)
+```
+
+A visual inspection of the background concentration data plotted along with the averaged concentration confirms that the calculated background levels agree with the measured background concentration levels.
+
+```{r, echo=FALSE, fig.cap={"The calculated background concentration in pink seems to agree with the measured levels."}}
+gasfinder.avg %>% 
+  reshape2::melt(id.var="Date", na.rm=TRUE) %>% 
+  plyr::rename(c("variable"="Reflector","value"="PPM")) %>% 
+  ggplot(aes(Date, PPM, color=Reflector)) + geom_point() + scale_colour_manual(values=cbPalette) +
+  ggtitle("Averaged concentration data with background concentration") %>% print
+```
+
+### Background subtracted concentration
+
+We determine the perturbations above the background levels and then filter out very low values. We are not going to use the column containing background levels now, so we can drop it at this point.
+
+```{r}
+gasfinder.avg[, 2:8] =  gasfinder.avg[, 2:8] - bg
+gasfinder.avg %<>% .[,!names(.) %in% c("Background")]
+```
+
+### Reading and formatting weather data
+
+```{r}
+weather = read.csv(weather.file) %>% 
+         mutate(Date = Date %>% parse_date_time(c("%Y-%m-%d %H:%M:%S"), exact=T, tz=ginninderra.tz))
+```
+
+### Collating concentration and weather data
+
+```{r}
+collated = merge(weather, gasfinder.avg)
+id.cols = c("Date","Temperature", "WindSpeed", "WindDirection", "MO_Length","P_EC100_mean")
+collated %<>% 
+  reshape2::melt(id.var = id.cols) %<>% 
+  .[.$value >0,] %<>%
+  .[complete.cases(.),] %<>%
+   plyr::rename(c("variable"="Reflector", "value"="PPM"))
+```
+
+### Some more filtering
+
+Other filters that should be applied are - filtering out very low concentration values and rows with very low or very high wind speed.
+
+```{r}
+filter_sd = function(x){return(x[x$PPM > sd(x$PPM) ,])}
+collated %<>% 
+  ddply( .(Reflector), filter_sd) %<>%
+  .[.$WindSpeed > 1.5 & .$WindSpeed < 9,]
+```
+
+We write the data in a csv file for further analysis using Python PyMC package.
+
+```{r}
+collated.op = "0805-1305-collated.csv"
+collated$P_EC100_mean = collated$P_EC100_mean * 1000
+cols.order = c("Temperature", "P_EC100_mean", "WindSpeed", "WindDirection", "MO_Length", "Reflector", "PPM")
+collated %>% .[, cols.order] %>%
+  write.csv(file=collated.op, row.names=F, quote=F)
+```
+
+### Finally
+
+Here is a list of the R packages used for this analysis.
+
+```{r, echo=TRUE}
+sessionInfo()
+```
