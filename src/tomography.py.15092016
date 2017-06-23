@@ -1,0 +1,75 @@
+# Change log - fine grained categorization of most common stability category.
+import constants
+import menusystem as menu
+import numpy as np
+import pymc as pm
+from pymc import deterministic
+
+import util
+
+############################################################################
+# Read off the constants from constants.py.
+############################################################################
+samples = constants.samples
+h_source = constants.H
+z_fixed = constants.elevation
+p0_list = np.array(constants.mirror)
+p1_list = np.array(constants.reflectors)
+source_x, source_y = constants.source[0], constants.source[1]
+############################################################################
+# Read off the data.
+############################################################################
+infile = input('Enter the input file name : ')
+measured = np.loadtxt(infile, delimiter=',', skiprows=1)
+temp = measured[:, 0] #+ 274.15  # Convert to kelvin
+pressure = measured[:, 1]  # in pascals.
+wind_speed = measured[:, 2]
+wind_dir = measured[:, 3]
+lvals = measured[:, 4]
+reflectors = measured[:, 5] - 1  # Python indexing begings with 0.
+perturbation = measured[:, 6]
+plume_dir = wind_dir - 270
+############################################################################
+# Read off user's choice of dispersion model and method to be used. 
+############################################################################
+# models = {'a': 'gaussian2', 'b': 'semi-gaussian'}
+# aggregate_options = {'a': util.line_average, 'b': util.line_integral}
+# modelmenu = menu.MenuSystem('\n Plume dispersion model')
+# modelmenu.add_entry('a', 'Gaussian Model')
+# modelmenu.add_entry('b', 'Semi-gaussian model')
+# model_choice = str(modelmenu.run())
+# model = models[model_choice]
+
+# methodmenu = menu.MenuSystem('Choose appropriate method')
+# methodmenu.add_entry('a', 'Line average')
+# methodmenu.add_entry('b', 'Line integral')
+
+# method_choice = str(methodmenu.run())
+# method = aggregate_options[method_choice]
+# print('The method is ' + str(method))
+
+############################################################################
+# Set up the model
+############################################################################
+
+Q = pm.Uniform('Q', lower=0, upper=1)  
+tau = pm.Uninformative('tau', value=1)
+
+z = 2.3  # Height of instrument tower.
+# Compute perturbation matrix for 
+reading_predicted = np.empty_like(perturbation)
+for i, (reflector, u, theta, T, P, L) in enumerate(zip(reflectors, wind_speed, plume_dir, temp, pressure, lvals)):
+    params = {'z': z, 'L': L, 'U': u, 'H': h_source}
+    reflector = int(reflector)
+    reading_predicted[i] = util.line_average([source_x, source_y], p0_list[reflector], p1_list[reflector], z_fixed, samples, 1, h_source, theta, T,
+                                  P, params, 'gaussian')
+
+
+@deterministic
+def predicted(Q=Q):
+    out = Q * reading_predicted
+    return out
+
+
+res_sim = pm.Laplace('residual', mu=predicted, tau=tau)
+residual = pm.Laplace('residual', mu=predicted, tau=tau, value=perturbation, observed=True)

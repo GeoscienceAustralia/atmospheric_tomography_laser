@@ -1,0 +1,11 @@
+"""
+Constants required to run the model. Likely to remain same for multiple datasets.
+"""
+
+samples = 100
+H = 0.3
+molar_mass = 16.04
+elevation = 1.5 
+mirror = [[60,-50],[60,-50],[60,-50],[24,15],[24,15],[24,15],[-45.68,15.62]]
+reflectors = [[35,47],[86.5,46.5],[123.5,27.5],[86.5,46.5],[123.5,27.5],[107,-41],[-45.68,15.62]] 
+source = [66.7, 5.3]
