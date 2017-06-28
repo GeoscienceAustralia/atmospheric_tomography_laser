@@ -1,11 +1,11 @@
 % Atmospheric Tomography User Manual
-% Sangeeta Bhatia
+% Andew Feitz, Andrew Francis and Sangeeta Bhatia
 
 # About the software
 
 The Atmospheric Tomography software is a command line tool written in python to estimate the emission rate of a point source from concentration data. It implements an extension of the Bayesian inversion method outlined in [this](http://www.sciencedirect.com/science/article/pii/S187661021300550X) paper. 
 
-This manual walks a user through the steps needed to run the Atmospheric Tomography program. Please report any errors or omissions to the author.
+This manual walks a user through the steps needed to run the Atmospheric Tomography program. Please report any errors or omissions to the authors.
 
 # Installation
 
@@ -375,6 +375,26 @@ directives [here](https://docs.python.org/3/library/datetime.html#strftime-strpt
 4. The results look all wrong.
    While there are many reasons this can happen, do check that the units of all parameters are correct i.e., pressure is in pascals, temperature is degree Celsius etc. Note that the units are not to be specified in the input file. Make sure the background subtracted concentration is in PPM.
 
+# Citing this work
+
+You can use the following bibtex entry for citing this work.
+```
+@misc{feitz2017,
+  author = {Bhatia Sangeeta, Feitz Andrew and Francis Andrew},
+  title = {Atmospheric Tomography},
+  year = {2017},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/GeoscienceAustralia/
+	atmospheric_tomography_laser}}
+}
+```
+Alternately, you can cite it as:
+```
+Bhatia Sangeeta, Feitz Andew and Francis Andrew, Atmospheric
+Tomography, (2017), GitHub repository, 
+https://github.com/GeoscienceAustralia/atmospheric_tomography_laser
+```
 \newpage
 
 # References
