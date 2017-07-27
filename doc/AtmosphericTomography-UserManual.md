@@ -1,5 +1,13 @@
 % Atmospheric Tomography User Manual
-% Andew Feitz, Andrew Francis and Sangeeta Bhatia
+% Sangeeta Bhatia[^sb], Andew Feitz[^af] and Andrew Francis[^arf]
+
+[^sb]: Centre for Research in Mathematics, Western Sydney University,
+Sydney, Australia
+
+[^af]: Geoscience Australia, Canberra, Australia 
+
+[^arf]: Centre for Research in Mathematics, Western Sydney University,
+Sydney, Australia
 
 # About the software
 
